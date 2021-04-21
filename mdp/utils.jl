@@ -1,7 +1,7 @@
 # @Created by: OctaveOliviers
 # @        on: 2021-04-01T16:13:05+02:00
-# @Last modified by: OctaveOliviers
-# @              on: 2021-04-06T13:07:28+02:00
+# @Last modified by: octave
+# @              on: 2021-04-12T12:31:00+02:00
 
 
 using Random
@@ -33,7 +33,7 @@ function generate_mdp(
     # store terminal states of MDP
     term_states = [i for i=(num_s-num_term+1):num_s]
     # set q-values
-    q = initialize_q(num_s, num_sa, num_term)
+    q = create_q(num_s, num_sa, num_term)
     # optimal policy
     policy = compute_policy(structure, q)
     # compute rewards
@@ -84,7 +84,7 @@ function create_transitions(
 end
 
 
-function initialize_q(
+function create_q(
         num_s::Integer,
         num_sa::Integer,
         num_term::Integer
