@@ -1,7 +1,7 @@
 # @Created by: OctaveOliviers
 # @        on: 2021-04-01T15:07:04+02:00
 # @Last modified by: octave
-# @              on: 2021-04-20T17:32:33+02:00
+# @              on: 2021-05-25T17:48:47+01:00
 
 
 using Plots ; plotly()
@@ -40,7 +40,7 @@ mces = MCES(mdp, seed=13)
 ### Expected MCES
 # run_mces_exp!(mces, mdp, num_epi=1e5)
 
-num_epi = 1e6
+num_epi = 1e5
 p = plot()
 
 q_min = 4.

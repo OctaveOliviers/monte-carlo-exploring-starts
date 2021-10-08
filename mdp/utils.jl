@@ -1,7 +1,7 @@
 # @Created by: OctaveOliviers
 # @        on: 2021-04-01T16:13:05+02:00
 # @Last modified by: octave
-# @              on: 2021-04-12T12:31:00+02:00
+# @              on: 2021-08-12T11:59:59+02:00
 
 
 using Random
@@ -32,7 +32,7 @@ function generate_mdp(
     transitions = create_transitions(num_s, num_sa, num_term)
     # store terminal states of MDP
     term_states = [i for i=(num_s-num_term+1):num_s]
-    # set q-values
+    # action-values
     q = create_q(num_s, num_sa, num_term)
     # optimal policy
     policy = compute_policy(structure, q)
@@ -52,7 +52,7 @@ function create_structure(
     explain
     """
     # assert that there are not too many (state, action) pairs
-    @assert num_s <= num_sa <= num_s^2
+    # @assert num_s <= num_sa <= num_s^2
 
     # structure matrix
     structure = zeros(Integer, num_sa, num_s)
@@ -138,6 +138,18 @@ function compute_q_policy(
     """
     # solve Bellman equation
     return (I-discount*transitions'*policy')\rewards
+end
+
+
+function compute_q_policy(
+        policy::Matrix,
+        mdp::MDP
+    )::Vector
+    """
+    explain
+    """
+    # solve Bellman equation
+    return (I-mdp.discount*mdp.transitions'*policy')\mdp.rewards
 end
 
 

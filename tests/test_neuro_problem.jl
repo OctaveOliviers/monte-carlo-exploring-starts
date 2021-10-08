@@ -1,7 +1,7 @@
 # @Created by: OctaveOliviers
 # @        on: 2021-04-01T15:07:04+02:00
-# @Last modified by: OctaveOliviers
-# @              on: 2021-04-06T13:09:12+02:00
+# @Last modified by: octave
+# @              on: 2021-08-12T15:09:15+02:00
 
 
 # test convergence of Example 5.12 in pp. 234-236 of Bertsekas & Tsitsiklis (1996)
@@ -32,7 +32,7 @@ P = [[1 0];
      [0 1];
      [0 0]]
 
-q = policy_q(P, T, r, gam)
+q = compute_q_policy(P, T, r, gam)
 
 mdp = MDP(2, 4, gam, S, P, T, r, q, [])
 

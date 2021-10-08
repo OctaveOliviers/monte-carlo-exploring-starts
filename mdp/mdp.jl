@@ -1,7 +1,10 @@
 # @Created by: OctaveOliviers
 # @        on: 2021-04-01T15:07:04+02:00
-# @Last modified by: OctaveOliviers
-# @              on: 2021-04-06T13:07:21+02:00
+# @Last modified by: octave
+# @              on: 2021-08-10T09:20:05+02:00
+
+
+include("../params.jl")
 
 
 struct MDP
