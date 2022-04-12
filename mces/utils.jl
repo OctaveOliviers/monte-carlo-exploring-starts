@@ -1,15 +1,16 @@
 # @Created by: OctaveOliviers
 # @        on: 2021-04-01T16:17:31+02:00
 # @Last modified by: octave
-# @              on: 2021-04-14T07:42:55+02:00
+# @              on: 2022-04-12T14:06:44+01:00
 
 
 using Random
 using StatsBase
 using ProgressBars
 
+include("../mdp/utils.jl")
 include("mces.jl")
-include("../mdp/mdp.jl")
+# include("../mdp/mdp.jl")
 include("../params.jl")
 
 
@@ -81,6 +82,16 @@ function mces_step_all_sa_update!(
 end
 
 
+function mces!(dq, q, p, t)
+    """
+    Continuous time MCES step
+    """
+    pol = val2pol(mdp.structure, q)
+    q_pol = pol2val(pol, mdp)
+    dq .= prior*(q_pol - q)
+end
+
+
 function mces_step!(
         mces::MCES,
         mdp::MDP,
@@ -99,6 +110,49 @@ function mces_step!(
     update_policy!(mces.policy, mdp.structure, mces.q)
 
     return nothing
+end
+
+
+function generate_episode(
+        mces::MCES,
+        mdp::MDP;
+        max_len_epi::Real=EPISODE_MAX_LENGTH,
+        seed::Integer=NO_SEED
+    )::Tuple{Vector,Vector,Vector}
+    """
+    explain
+    """
+    # set random number generator
+    if seed != NO_SEED; Random.seed!(seed); end
+
+    # store the state-actions and rewards encountered in the episode
+    sa, r = Vector{Integer}(undef, 0), Vector{AbstractFloat}(undef, 0)
+    # store number of visits of each state-action in this episode
+    n_vis = zeros(Integer, mdp.num_sa)
+
+    function take_step(transition_prob)
+        # choose state-action pair according to weights in transition_prob
+        append!(sa, sample(1:mdp.num_sa, Weights(transition_prob)))
+        # store reward of initial state-action
+        append!(r, mdp.rewards[sa[end]])
+        # update number of visits of initial state-action
+        n_vis[sa[end]] += 1
+    end
+
+    # initialise episode
+    take_step(mces.prior)
+    # generate an episode from initial state
+    while !(sa[end] in mdp.terminal_state_action)
+        # go to new state-action
+        take_step((mces.policy*mdp.transitions)[:,sa[end]])
+        # exit if episode is too long
+        if length(sa) >= max_len_epi
+            println("Terminate because reached maximal length of episode.")
+            break
+        end
+    end
+
+    return sa, r, n_vis
 end
 
 
@@ -163,7 +217,7 @@ function update_policy!(
     """
     explain
     """
-    policy .= compute_policy(structure, q)
+    policy .= val2pol(structure, q)
 
     return nothing
 end
@@ -222,7 +276,7 @@ function mces_exp_step!(
     explain
     """
     # episode step and number of visits
-    epi_stp = compute_q_policy(mces.policy, mdp.transitions, mdp.rewards, mdp.discount) - mces.q
+    epi_stp = pol2val(mces.policy, mdp.transitions, mdp.rewards, mdp.discount) - mces.q
     epi_vis = sum([(mces.policy*mdp.transitions)^i*mces.prior for i = 0:max_len_epi])
 
     total_visits += epi_vis
@@ -230,7 +284,7 @@ function mces_exp_step!(
     # update q-estimates
     mces.q += epi_stp.*epi_vis./total_visits
     # compute policy matrix from q-values
-    mces.policy = compute_policy(mdp.structure, mces.q)
+    mces.policy = pol2val(mdp.structure, mces.q)
 
     return nothing
 end
