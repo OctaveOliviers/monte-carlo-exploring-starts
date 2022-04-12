@@ -1,17 +1,48 @@
 # @Created by: OctaveOliviers
-# @        on: 2021-04-01T16:17:31+02:00
+# @        on: 2021-04-01T15:07:04+02:00
 # @Last modified by: octave
-# @              on: 2022-04-12T14:06:44+01:00
+# @              on: 2022-04-12T15:38:54+01:00
 
 
-using Random
+
+using DifferentialEquations
+using LinearAlgebra
 using StatsBase
-using ProgressBars
 
-include("../mdp/utils.jl")
-include("mces.jl")
-# include("../mdp/mdp.jl")
-include("../params.jl")
+include("mdp.jl")
+include("params.jl")
+include("libraries.jl")
+
+
+mutable struct MCES
+    """
+    struct for Monte Carlo Exploring Starts solver
+    """
+
+    q::Vector
+    policy::Matrix
+    prior::Vector
+
+    function MCES(
+            mdp::MDP;
+            seed::Integer=NO_SEED
+        )
+        """
+        constructor
+        """
+        # set random number generator
+        if seed != NO_SEED; Random.seed!(seed); end
+
+        # initialise q-values
+        q = rand(mdp.num_sa)
+        # initialise policy
+        policy = compute_policy(mdp.structure, q)
+        # initialise prior
+        prior = normalize(rand(mdp.num_sa), 1)
+
+        new(q, policy, prior)
+    end
+end # struct MCES
 
 
 function run_mces!(
@@ -48,6 +79,27 @@ function run_mces!(
 end
 
 
+function mces_step!(
+        mces::MCES,
+        mdp::MDP,
+        total_visits::Vector;
+        max_len_epi::Real=EPISODE_MAX_LENGTH,
+        seed::Integer=NO_SEED
+    )::Nothing
+    """
+    explain
+    """
+    # generate episode
+    epi_sa, epi_r, epi_vis = generate_episode(mces, mdp, max_len_epi=max_len_epi, seed=seed)
+    # update q-estimates
+    update_q_values!(mces.q, epi_sa, epi_r, total_visits, epi_vis, mdp.discount)
+    # update policy matrix from q-values
+    update_policy!(mces.policy, mdp.structure, mces.q)
+
+    return nothing
+end
+
+
 function mces_step_all_sa_update!(
         mces::MCES,
         mdp::MDP;
@@ -77,37 +129,6 @@ function mces_step_all_sa_update!(
             break
         end
     end
-
-    return nothing
-end
-
-
-function mces!(dq, q, p, t)
-    """
-    Continuous time MCES step
-    """
-    pol = val2pol(mdp.structure, q)
-    q_pol = pol2val(pol, mdp)
-    dq .= prior*(q_pol - q)
-end
-
-
-function mces_step!(
-        mces::MCES,
-        mdp::MDP,
-        total_visits::Vector;
-        max_len_epi::Real=EPISODE_MAX_LENGTH,
-        seed::Integer=NO_SEED
-    )::Nothing
-    """
-    explain
-    """
-    # generate episode
-    epi_sa, epi_r, epi_vis = generate_episode(mces, mdp, max_len_epi=max_len_epi, seed=seed)
-    # update q-estimates
-    update_q_values!(mces.q, epi_sa, epi_r, total_visits, epi_vis, mdp.discount)
-    # update policy matrix from q-values
-    update_policy!(mces.policy, mdp.structure, mces.q)
 
     return nothing
 end
@@ -237,6 +258,37 @@ function update_policy(
     update_policy!(policy_new, structure, q)
 
     return policy_new
+end
+
+
+function simulate_continuous_mces(
+        mdp::MDP,
+        q0::Vector,
+        prior::Diagonal;
+        t_init::Real=0.0,
+        t_end::Real=5.0,
+        alg=Rosenbrock23()
+    )
+    """
+    Continuous time MCES step
+    """
+
+    function mces!(
+            dq::Vector,
+            q::Vector,
+            prior::Diagonal,
+            t::Real
+        )
+        pol = val2pol(mdp.structure, q)
+        q_pol = pol2val(pol, mdp)
+        dq .= prior*(q_pol - q)
+    end
+
+    tspan = (t_init, t_end)
+    prob = ODEProblem(mces!, q0, tspan, prior)
+    sol = solve(prob, alg, reltol=1e-6, abstol=1e-6, maxiters=1e7)
+
+    return sol
 end
 
 

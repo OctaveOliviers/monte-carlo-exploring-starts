@@ -1,21 +1,59 @@
 # @Created by: OctaveOliviers
-# @        on: 2021-04-01T16:13:05+02:00
+# @        on: 2021-04-01T15:07:04+02:00
 # @Last modified by: octave
-# @              on: 2022-04-12T14:15:30+01:00
+# @              on: 2022-04-12T15:28:35+01:00
+
 
 
 using Random
 using StatsBase
 using LinearAlgebra
 
-include("mdp.jl")
-# include("../mces/mces.jl")
-include("../params.jl")
+include("params.jl")
 
 
-function create_rand_mdp(
+struct MDP
+    """
+    struct for Markov Decision Process
+    """
+
+    num_s::Integer
+    num_sa::Integer
+    discount::Real
+    structure::Matrix
+    policy::Matrix
+    transitions::Matrix
+    rewards::Vector
+    q::Vector
+    terminal_state_action::Vector
+
+    function MDP(
+            num_s::Integer,
+            num_sa::Integer,
+            discount::Real,
+            structure::Matrix,
+            policy::Matrix,
+            transitions::Matrix,
+            rewards::Vector,
+            q::Vector,
+            terminal_state_action::Vector
+        )
+        """
+        constructor
+        """
+        # assert that all the variables have the appropriate size
+        @assert all(map(!iszero, [num_s, num_sa, discount]))
+        @assert size(structure) == size(policy) == size(transitions') == (num_sa, num_s)
+        @assert size(rewards) == size(q) == (num_sa,)
+
+        new(num_s, num_sa, discount, structure, policy, transitions, rewards, q, terminal_state_action)
+    end
+end # struct MDP
+
+
+function create_rand_mdp(;
         num_sa::Integer,
-        num_s::Integer;
+        num_s::Integer,
         discount::Real=DISCOUNT,
         seed::Integer=NO_SEED
     )::MDP
@@ -53,9 +91,6 @@ function create_structure(
     """
     explain
     """
-    # assert that there are not too many (state, action) pairs
-    # @assert num_s <= num_sa <= num_s^2
-
     # structure matrix
     structure = zeros(Int8, num_sa, num_s)
     # ensure each state has at least one action
@@ -76,7 +111,7 @@ function create_transitions(
     explain
     """
     # transition matrix
-    # need first identity to ensure that a terminal state has zero reward
+    # first identity to ensure that a terminal state has zero reward
     transitions = [I rand(num_s, num_sa-num_s)]
     transitions[:,1:num_s-num_term] = rand(num_s, num_s-num_term)
     # normalize
@@ -129,7 +164,7 @@ function val2pol(
 end
 
 
-function val2pol_sm(
+function val2pol_softmax(
         structure::Matrix,
         q::Vector,
         b::Real=1.
@@ -196,4 +231,41 @@ function rand_pol(
     for s = 1:mdp.num_s ; policy[sample(findall(x->x==1, m.structure[:,s])),s] = 1 ; end
 
     return policy
+end
+
+
+function aval2sval(
+        mdp::MDP,
+        q::VecOrMat
+    )::VecOrMat
+    """
+    action-values to state-values with greedy policy
+    """
+
+    v = zeros(Real, (size(q, 2), mdp.num_s))
+    for s = 1:mdp.num_s
+        sa_idx = findall(x->x==1, mdp.structure[:,s])
+        v[:, s] = maximum(q[sa_idx, :], dims=1)
+        # v[:, s] = q[sa_idx, :][argmax(q[sa_idx, :], dims=1)]
+    end
+
+    return v
+end
+
+
+function aval2rval(
+        mdp::MDP,
+        q::VecOrMat
+    )::VecOrMat
+    """
+    action-values to reward-values with greedy policy
+    """
+
+    r = zeros(Real, size(q))
+    for i = 1:size(q,2)
+        pol = val2pol(mdp.structure, q[:, i])
+        r[:,i] = (I - mdp.discount*mdp.transitions'*pol')*q[:, i]
+    end
+
+    return r
 end

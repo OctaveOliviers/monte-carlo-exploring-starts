@@ -1,41 +1,21 @@
 # @Created by: octave
 # @        on: 2021-08-10T07:20:25+02:00
 # @Last modified by: octave
-# @              on: 2022-04-12T14:04:16+01:00
+# @              on: 2022-04-12T15:36:13+01:00
 
 
 
-include("libraries.jl")
-include("../mces/utils.jl")
+include("../libraries.jl")
+include("../mdp.jl")
+include("../mces.jl")
 include("data_problem.jl")
 
-q = pol2val(policy, transitions, rewards, discount)
 mdp = MDP(num_s, num_sa, discount, structure, policy, transitions, rewards, q, term_states)
 
-function mces!(dq, q, p, t)
-    pol = val2pol(mdp.structure, q)
-    q_pol = pol2val(pol, mdp)
-    dq .= prior*(q_pol - q)
-end
-
-# solve
-tspan = (0.0, 5.0)
-prob = ODEProblem(mces!, q0, tspan)
-# sol = solve(prob, Tsit5(), reltol=1e-6, abstol=1e-6, maxiters=1e7)
-sol = solve(prob, Rosenbrock23(), reltol=1e-6, abstol=1e-6, maxiters=1e7)
+sol = simulate_continuous_mces(mdp, q0, prior)
 q_sol = reduce(hcat, sol.u)
-v_sol = zeros(Real, (size(q_sol)[2], num_s))
-for s = 1:num_s
-    sa_idx = findall(x->x==1, mdp.structure[:,s])
-    v_sol[:, s] = q_sol[sa_idx, :][argmax(q_sol[sa_idx, :], dims=1)]
-end
-
-r_sol = zeros(Float64, size(q_sol))
-for i = 1:length(sol)
-    P = val2pol(mdp.structure, q_sol[:, i])
-    r_sol[:,i] = (I - discount*mdp.transitions'*P')*q_sol[:, i]
-end
-# end
+v_sol = aval2sval(mdp, q_sol)
+r_sol = aval2rval(mdp, q_sol)
 
 # check whether error on rewards monotonically decreases
 r_norm = norm.(eachcol(rewards .- r_sol))

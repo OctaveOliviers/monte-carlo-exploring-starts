@@ -1,11 +1,11 @@
 # @Created by: octave
 # @        on: 2022-04-12T13:36:33+01:00
 # @Last modified by: octave
-# @              on: 2022-04-12T14:18:53+01:00
+# @              on: 2022-04-12T15:39:10+01:00
 
 
 
-include("../mdp/utils.jl")
+include("../mdp.jl")
 
 """
 Single state two actions
@@ -22,8 +22,8 @@ term_states = []
 q = pol2val(policy, transitions, rewards, discount)
 
 # mces data
-q0 = [1., 2.]
-prior = Diagonal([0.5, 0.5])
+q0 = [1.5, 2.]
+prior = Diagonal([0.9, 0.1])
 
 
 """
