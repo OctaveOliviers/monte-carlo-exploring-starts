@@ -1,7 +1,7 @@
 # @Created by: octave
 # @        on: 2021-08-10T07:20:25+02:00
 # @Last modified by: octave
-# @              on: 2022-04-12T15:42:04+01:00
+# @              on: 2022-04-13T08:00:51+01:00
 
 
 
@@ -12,7 +12,7 @@ include("data_problem.jl")
 
 mdp = MDP(num_s, num_sa, discount, structure, policy, transitions, rewards, q, term_states)
 
-sol = simulate_continuous_mces(mdp, q0, prior, t_end=20.)
+sol = simulate_continuous_mces(mdp, q0, prior, t_end=40.)
 q_sol = reduce(hcat, sol.u)
 v_sol = aval2sval(mdp, q_sol)
 r_sol = aval2rval(mdp, q_sol)

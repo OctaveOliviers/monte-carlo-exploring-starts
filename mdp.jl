@@ -1,7 +1,7 @@
 # @Created by: OctaveOliviers
 # @        on: 2021-04-01T15:07:04+02:00
 # @Last modified by: octave
-# @              on: 2022-04-12T15:28:35+01:00
+# @              on: 2022-04-13T09:06:55+01:00
 
 
 
@@ -54,6 +54,7 @@ end # struct MDP
 function create_rand_mdp(;
         num_sa::Integer,
         num_s::Integer,
+        num_term::Integer=1,
         discount::Real=DISCOUNT,
         seed::Integer=NO_SEED
     )::MDP
@@ -65,7 +66,7 @@ function create_rand_mdp(;
 
     # number of terminal states
     # TODO have single terminal state
-    num_term = rand(1:Int(ceil(num_s/3)))
+    # num_term = rand(1:Int(floor(num_s/3)))
     # create structure
     structure = create_structure(num_s, num_sa, num_term)
     # create transition probabilities

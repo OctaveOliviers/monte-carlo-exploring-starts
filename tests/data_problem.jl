@@ -1,7 +1,7 @@
 # @Created by: octave
 # @        on: 2022-04-12T13:36:33+01:00
 # @Last modified by: octave
-# @              on: 2022-04-12T15:39:10+01:00
+# @              on: 2022-04-13T09:10:20+01:00
 
 
 
@@ -10,20 +10,20 @@ include("../mdp.jl")
 """
 Single state two actions
 """
-# mdp data
-num_s = 1
-num_sa = 2
-discount = 0.8
-structure = hcat([1, 1]) # matrix
-transitions = [1 1] # matrix
-rewards = [1., 0.] # vector
-policy = hcat([1, 0]) # matrix
-term_states = []
-q = pol2val(policy, transitions, rewards, discount)
-
-# mces data
-q0 = [1.5, 2.]
-prior = Diagonal([0.9, 0.1])
+# # mdp data
+# num_s = 1
+# num_sa = 2
+# discount = 0.8
+# structure = hcat([1, 1]) # matrix
+# transitions = [1 1] # matrix
+# rewards = [1., 0.] # vector
+# policy = hcat([1, 0]) # matrix
+# term_states = []
+# q = pol2val(policy, transitions, rewards, discount)
+# 
+# # mces data
+# q0 = [1.5, 2.]
+# prior = Diagonal([0.9, 0.1])
 
 
 """
@@ -51,6 +51,18 @@ prior = Diagonal([0.9, 0.1])
 # q0 = [1.9, 2, 2.95, 3] # for weird spiral behaviour
 # prior = Diagonal([0.01, 0.4, 0.4, 0.01]) # for weird spiral behaviour
 # prior = Diagonal([0.1, 0.4, 0.4, 0.1]) # for weird nonmonotone behaviour
+
+
+"""
+Small random MDP
+"""
+# Random.seed!(317)
+# # mdp data
+# mdp = create_rand_mdp(num_s=1, num_sa=2, num_term=0)
+#
+# # mces data
+# q0 = [1.5, 2.]
+# prior = Diagonal([0.9, 0.1])
 
 
 """
